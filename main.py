@@ -14,13 +14,9 @@ def create_app(test_config=None):
         app.logger.info('Processing default request')
         return 'Hello, World!'
 
-    @app.route('/endpoint1')
-    def endpoint1():
-        return 'This is endpoint 1.'
-
-    @app.route('/endpoint2')
-    def endpoint2():
-        return 'This is endpoint 2.'
+    @app.route('/favicon.ico')
+    def favicon():
+        return '', 204
     
     @app.errorhandler(404)
     def page_not_found(e):
