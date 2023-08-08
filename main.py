@@ -20,7 +20,7 @@ def create_app():
         app.config['DEBUG'] = True
 
     # Usage:
-    secrets_manager_client = SecretsManagerClient(logger=logger,local_dev=True)
+    secrets_manager_client = SecretsManagerClient(logger=logger,local_dev=local_dev)
     sample = None
     secret = secrets_manager_client.get_secret("prod/airtable_oauth")
     if secret:
