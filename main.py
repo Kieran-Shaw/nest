@@ -1,6 +1,5 @@
 from flask import Flask, jsonify
 from modules.airtable_client import AirtableClient
-from modules.secrets_client import SecretsManagerClient
 from dotenv import load_dotenv
 import os
 import logging
@@ -15,21 +14,17 @@ def create_app():
     setup_logging()  # Set up logging configuration
     logger = app.logger  # Get the Flask app's logger instance
 
-    local_dev = os.getenv('LOCAL_DEV',False)
-    if local_dev:
+    local_dev = os.getenv('LOCATION')
+    if local_dev == 'LOCAL':
         app.config['DEBUG'] = True
-
-    # Usage:
-    secrets_manager_client = SecretsManagerClient(logger=logger,local_dev=local_dev)
-    sample = None
-    secret = secrets_manager_client.get_secret("prod/airtable_oauth")
-    if secret:
-        sample = 'We Found It!'
+    
+    # instantiate AirtableClient
+    airtable_client = AirtableClient(logger=logger)
 
     @app.route('/')
     def base_request():
         app.logger.info('Base URL Hit')
-        return f'Base NEST URL, Please Specify Which Endpoint To Take An Action: {sample}', 200
+        return f'Base NEST URL, Please Specify Which Endpoint To Take An Action', 200
 
     @app.route('/service-plan-creation')
     def hello_world():
