@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from modules.airtable_client import AirtableClient
 from dotenv import load_dotenv
 import os
@@ -14,43 +14,51 @@ def create_app():
     setup_logging()  # Set up logging configuration
     logger = app.logger  # Get the Flask app's logger instance
 
-    local_dev = os.getenv('LOCATION')
-    if local_dev == 'LOCAL':
+    if os.getenv('LOCATION') == 'LOCAL':
         app.config['DEBUG'] = True
+
+    # instantiate AirtableClient
+    # airtable_client = AirtableClient(logger=logger)
 
     @app.route('/')
     def base_request():
         app.logger.info('Base URL')
-        # instantiate AirtableClient
-        airtable_client = AirtableClient(logger=logger)
         return f'Base NEST URL, Please Specify Which Endpoint To Take An Action', 200
 
-    @app.route('/create')
+    @app.route('/create', methods=['POST'])
     def create_service_plan():
         app.logger.info('Starting creation of service plan...')
+        data = request.json
         client_name = 'Demo Company'
         status_code = 200
+        app.logger.info(f'Finished creation of service plan: INFORMATION')
         return f'Service Plan Created: {client_name}', status_code
     
-    @app.route('/delete')
+    @app.route('/delete', methods=['POST'])
     def delete_service_plan():
         app.logger.info('Starting deletion of service plan...')
+        data = request.json
         client_name = 'Demo Company'
         status_code = 200
+        app.logger.info(f'Finished deletion of service plan: INFORMATION')
         return f'Service Plan Deleted: {client_name}', status_code
     
-    @app.route('/refactor')
+    @app.route('/refactor', methods=['POST'])
     def refactor_service_plan():
         app.logger.info('Starting refactor of service plan...')
+        data = request.json
         client_name = 'Demo Company'
         status_code = 200
+        app.logger.info(f'Finished refactor of service plans: INFORMATION')
         return f'Service Plan Refactored: {client_name}', status_code
     
-    @app.route('/update')
+    @app.route('/update', methods=['POST'])
     def update_service_plans():
         app.logger.info('Starting update of service plans...')
+        data = request.json
         client_name = ['Demo Company','ACME Corp']
         status_code = 200
+        app.logger.info(f'Finished update of service plans: INFORMATION')
         return f'Service Plans Updated: {client_name}', status_code
 
     @app.route('/favicon.ico')
