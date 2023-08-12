@@ -1,24 +1,20 @@
 from flask import Flask, jsonify, request
-from modules.airtable_client import AirtableClient
 from dotenv import load_dotenv
 import os
+from modules.methods.create_service_plan import CreateServicePlan
 import logging
 
-def setup_logging():
-    logging.basicConfig(level=logging.INFO)
+# Set up global logging configuration
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def create_app():
     app = Flask(__name__)
 
     load_dotenv()  # Load environment variables from .env file
-    setup_logging()  # Set up logging configuration
-    logger = app.logger  # Get the Flask app's logger instance
 
     if os.getenv('LOCATION') == 'LOCAL':
         app.config['DEBUG'] = True
-
-    # instantiate AirtableClient
-    # airtable_client = AirtableClient(logger=logger)
 
     @app.route('/')
     def base_request():
@@ -27,12 +23,11 @@ def create_app():
 
     @app.route('/create', methods=['POST'])
     def create_service_plan():
-        app.logger.info('Starting creation of service plan...')
         data = request.json
-        client_name = 'Demo Company'
-        status_code = 200
+        app.logger.info(f'Starting creation of service plan for {data["data"]["client_name"]}')
+        service_plan_status = CreateServicePlan(create_object=data,logger=logger)
         app.logger.info(f'Finished creation of service plan: INFORMATION')
-        return f'Service Plan Created: {client_name}', status_code
+        return f'Service Plan Created: {data["data"]["client_name"]}', service_plan_status.status_code
     
     @app.route('/delete', methods=['POST'])
     def delete_service_plan():
