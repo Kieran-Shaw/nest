@@ -1,6 +1,6 @@
 import requests
 
-URL = 'http://127.0.0.1:8080/create'
+URL = 'http://127.0.0.1:5000/create'
 HEADERS = {'Content-Type': 'application/json'}
 
 # payload
@@ -9,7 +9,7 @@ payload = {
     "client_name": "Keystone Dental",
     "record_id": "recPZkIVNjfHqx9rF",
     "client_id": "rec53LXywLsdHrzq8",
-    "group_size": "Large Group",
+    "group_size": "recHwNU36PY43ta0F",
     "funding_tag": "Fully Insured",
     "conditionals": [],
     "renewal_date": "2024-01-01",

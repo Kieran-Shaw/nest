@@ -21,6 +21,7 @@ class CreateServicePlan:
         self.renewal_date = datetime.strptime(create_object["data"]["renewal_date"], '%Y-%m-%d')
         self.template_table_ids = config["template"]
         self.write_table_ids = config["write"]
+        self.service_template = None
 
         # Store the logger
         self.logger = logger
@@ -36,12 +37,12 @@ class CreateServicePlan:
         self.logger.info(f"Attempting to create service plan for client_id: {self.client_id}")
 
         # Query Service Template
-        service_template = ServiceTemplateQuerier(table_id_dict=self.template_table_ids).query_all_tables()
+        self.service_template = ServiceTemplateQuerier(table_id_dict=self.template_table_ids).query_all_tables()
 
         # with open('response.json', 'w') as json_file:
-        #     json.dump(service_template, json_file)
+        #     json.dump(self.service_template, json_file)
 
-        if not service_template:
+        if not self.service_template:
             # Log the failure to fetch the service template
             self.logger.error(f"Failed to query service template for client_id: {self.client_id}")
             
@@ -50,6 +51,12 @@ class CreateServicePlan:
             raise ServiceCreationError("Failed to query service template.")
         
         # Add logic for creating the service plan...
+        applicable_tasks = self.applicable_tasks()
+        applicable_milestones = self.applicable_milestones(applicable_tasks=applicable_tasks)
+        applicable_buckets = self.applicable_buckets(applicable_milestones=applicable_milestones)
+        
+        # create objects to then write to airtable
+
         # Log success
         self.logger.info(f"Successfully created service plan for client_id: {self.client_id}")
 
@@ -61,5 +68,32 @@ class CreateServicePlan:
     @property
     def status_code(self):
         return self._status_code
+    
+    def applicable_tasks(self):
+        tasks = self.service_template["tasks"]
+        group_size_tasks = self.group_size_filter(tasks=tasks)
+        return
+    
+    def applicable_milestones(self,applicable_tasks:dict):
+        return
+    
+    def applicable_buckets(self,applicable_milestones:dict):
+        return
+    
+    def group_size_filter(self, tasks:dict):
+        # target id
+        target_id = self.group_size[0]
+        # List to store the matched tasks
+        matched_tasks = []
+        # Iterating through the tasks to find matches
+        for task in tasks:
+            if "Group Size" in task["fields"] and self.group_size in task["fields"]["Group Size"]:
+                matched_tasks.append(task)
+
+        return matched_tasks
+    
+    def conditional_filter(self, group_size_tasks):
+        return
+        
 
 
