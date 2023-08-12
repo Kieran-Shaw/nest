@@ -1,0 +1,34 @@
+{
+    "template": [
+        {
+            "name": "dates",
+            "id": "tblkrwA44ioAv2LVw"
+        },
+        {
+            "name": "buckets",
+            "id": "tbl1U5RRdFsp2gGMn"
+        },
+        {
+            "name": "milestones",
+            "id": "tblr72gtOMyXGBlbV"
+        },
+        {
+            "name": "tasks",
+            "id": "tblKMSzGEb7ONZ1uu"
+        }
+    ],
+    "write": [
+        {
+            "name": "buckets",
+            "id": "tblFEgmaSOoIPEkt5"
+        },
+        {
+            "name": "milestones",
+            "id": "tblcZ2zwlNI37DMP7"
+        },
+        {
+            "name": "tasks",
+            "id": "tblIKmAcBPbRUj3Nm"
+        }
+    ]
+}

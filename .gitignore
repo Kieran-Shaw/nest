@@ -1,2 +1,4 @@
 .env
 __pycache__
+response.json
+.DS_Store
