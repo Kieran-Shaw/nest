@@ -24,10 +24,10 @@ def create_app():
     @app.route('/create', methods=['POST'])
     def create_service_plan():
         data = request.json
-        app.logger.info(f'Starting creation of service plan for {data["data"]["client_name"]}')
+        app.logger.info(f'Starting creation of service plan for {data["client_name"]}')
         service_plan_status = CreateServicePlan(create_object=data,logger=logger)
         app.logger.info(f'Finished creation of service plan: INFORMATION')
-        return f'Service Plan Created: {data["data"]["client_name"]}', service_plan_status.status_code
+        return f'Service Plan Created: {data["client_name"]}', service_plan_status.status_code
     
     @app.route('/delete', methods=['POST'])
     def delete_service_plan():
