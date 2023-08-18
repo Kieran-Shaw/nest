@@ -26,7 +26,7 @@ def create_app():
         data = request.json
         app.logger.info(f'Starting creation of service plan for {data["client_name"]}')
         service_plan_status = CreateServicePlan(create_object=data,logger=logger)
-        app.logger.info(f'Finished creation of service plan: INFORMATION')
+        app.logger.info(f'Finished creation of service plan for {data["client_name"]}')
         return f'Service Plan Created: {data["client_name"]}', service_plan_status.status_code
     
     @app.route('/delete', methods=['POST'])
