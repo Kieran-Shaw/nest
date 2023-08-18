@@ -1,4 +1,4 @@
-from modules.business_logic.get_service_template import ServiceTemplateQuerier
+from modules.business_logic.airtable_methods import ServiceTemplateQuerier, WriteServiceItems
 from datetime import datetime
 import json
 
@@ -13,12 +13,12 @@ config = load_config('config.json')
 
 class CreateServicePlan:
     def __init__(self, create_object: dict, logger):
-        self.client_id = create_object["data"]["client_id"]
-        self.service_create_id = create_object["data"]["record_id"]
-        self.group_size = create_object["data"]["group_size"]
-        self.funding_tag = create_object["data"]["funding_tag"]
-        self.conditionals = create_object["data"]["conditionals"]
-        self.renewal_date = datetime.strptime(create_object["data"]["renewal_date"], '%Y-%m-%d')
+        self.client_id = create_object["client_id"]
+        self.service_create_id = create_object["service_plan_id"]
+        self.group_size = create_object["group_size_id"]
+        # self.funding_tag = create_object["data"]["funding_tag"]
+        self.conditionals = create_object["conditionals_id"]
+        # self.renewal_date = datetime.strptime(create_object["data"]["renewal_date"], '%Y-%m-%d')
         self.template_table_ids = config["template"]
         self.write_table_ids = config["write"]
         self.service_template = None
@@ -37,7 +37,7 @@ class CreateServicePlan:
         self.logger.info(f"Attempting to create service plan for client_id: {self.client_id}")
 
         # Query Service Template
-        self.service_template = ServiceTemplateQuerier(table_id_dict=self.template_table_ids).query_all_tables()
+        self.service_template = ServiceTemplateQuerier(table_id_list=self.template_table_ids).query_all_tables()
 
         # with open('response.json', 'w') as json_file:
         #     json.dump(self.service_template, json_file)
@@ -51,18 +51,19 @@ class CreateServicePlan:
             raise ServiceCreationError("Failed to query service template.")
         
         # Add logic for creating the service plan...
+        write_client = WriteServiceItems(table_id_list=self.write_table_ids)
+        # Find applicable tasks, milestones, buckets & create service_plan
         applicable_tasks = self.applicable_tasks()
-        applicable_milestones = self.applicable_milestones(applicable_tasks=applicable_tasks)
-        applicable_buckets = self.applicable_buckets(applicable_milestones=applicable_milestones)
-        
-        # create objects to then write to airtable
+        grouped_by_bucket = self.group_by_bucket(milestones=self.service_template["milestones"],applicable_tasks=applicable_tasks)
+        create_buckets = self.write_records(write_client=write_client, grouped_by_bucket=grouped_by_bucket)
 
+        if not create_buckets:
+            self._status_code = 400
+            raise ServiceCreationError("Failed to create service plan, check logs")
+        
         # Log success
-        self.logger.info(f"Successfully created service plan for client_id: {self.client_id}")
-
-        # Assuming the service plan creation is successful
         self._status_code = 200
-        
+        self.logger.info(f"Successfully created service plan for client_id: {self.client_id}")
         return self._status_code
 
     @property
@@ -72,28 +73,105 @@ class CreateServicePlan:
     def applicable_tasks(self):
         tasks = self.service_template["tasks"]
         group_size_tasks = self.group_size_filter(tasks=tasks)
-        return
-    
-    def applicable_milestones(self,applicable_tasks:dict):
-        return
-    
-    def applicable_buckets(self,applicable_milestones:dict):
-        return
-    
-    def group_size_filter(self, tasks:dict):
-        # target id
-        target_id = self.group_size[0]
+        group_size_conditional = self.conditional_filter(tasks=tasks,group_size_tasks=group_size_tasks)
+        return group_size_conditional
+
+    def group_size_filter(self, tasks: list):
         # List to store the matched tasks
         matched_tasks = []
         # Iterating through the tasks to find matches
         for task in tasks:
             if "Group Size" in task["fields"] and self.group_size in task["fields"]["Group Size"]:
                 matched_tasks.append(task)
-
         return matched_tasks
     
-    def conditional_filter(self, group_size_tasks):
-        return
+    def conditional_filter(self, tasks: list, group_size_tasks: list):
+        # Iterating through the group_size_tasks to find matches for conditionals
+        for task in tasks:
+            if "Conditionals" in task["fields"] and set(task["fields"]["Conditionals"]) & set(self.conditionals):
+                group_size_tasks.append(task)
+        return group_size_tasks
+    
+    def task_id_to_object(self,applicable_tasks:list):
+        # Assuming tasks is your original list of task objects
+        task_id_to_object = {task["id"]: task for task in applicable_tasks}
+        return task_id_to_object
+
+    def structure_object(self, grouped_by_bucket: dict):
+        grouped_by_bucket_cleaned = {}
+
+        for bucket_id, milestones in grouped_by_bucket.items():
+            grouped_by_bucket_cleaned[bucket_id] = {}
+
+            for milestone_id, tasks in milestones.items():
+                grouped_by_bucket_cleaned[bucket_id][milestone_id] = [{"[Template] Tasks": [task["id"]]} for task in tasks]
+        
+        return grouped_by_bucket_cleaned
+    
+    def group_by_bucket(self, milestones: list, applicable_tasks: list):
+        # return the lookup dictionaries
+        task_id_to_object = self.task_id_to_object(applicable_tasks=applicable_tasks)
+
+        grouped_by_bucket = {}
+
+        # Start by grouping by [Template] Buckets
+        for milestone in milestones:
+            bucket = milestone["fields"]["[Template] Buckets"][0]  # Assuming there's only one bucket per milestone
+
+            # Collect applicable tasks for this milestone
+            applicable_tasks = [task_id_to_object[task_id] for task_id in milestone["fields"]["[Template] Tasks"] if task_id in task_id_to_object]
+            
+            # If there are no applicable tasks, we skip this milestone
+            if not applicable_tasks:
+                continue
+
+            # If there are applicable tasks, then process further
+            if bucket not in grouped_by_bucket:
+                grouped_by_bucket[bucket] = {}
+
+            # Add the milestone and its applicable tasks under the respective bucket
+            grouped_by_bucket[bucket][milestone["id"]] = applicable_tasks
+
+        cleaned_grouped_by_bucket = self.structure_object(grouped_by_bucket=grouped_by_bucket)
+
+        return cleaned_grouped_by_bucket
+    
+    def write_records(self, write_client: WriteServiceItems, grouped_by_bucket: dict):
+        bucket_data_list = []
+
+        for bucket_id, milestones in grouped_by_bucket.items():
+            milestone_data_list = []
+            
+            for milestone_id, tasks in milestones.items():
+                created_task_ids = write_client.create_records(table_name="tasks",record_list=tasks)
+                milestone_data = {
+                    "[Template] Milestones": [milestone_id],
+                    "Tasks": created_task_ids
+                }
+                milestone_data_list.append(milestone_data)
+
+            created_milestone_ids = write_client.create_records(table_name="milestones",record_list=milestone_data_list)
+
+            bucket_data = {
+                "[Template] Buckets": [bucket_id],
+                "Milestones": created_milestone_ids,
+                "ServicePlans": [self.service_create_id],
+                "Service Plan Dates": [self.bucket_date(bucket_id=bucket_id)]
+            }
+            bucket_data_list.append(bucket_data)
+
+        created_bucket_ids = write_client.create_records(table_name="buckets",record_list=bucket_data_list)
+        return created_bucket_ids
+    
+    def bucket_date(self, bucket_id: str):
+        for object in self.service_template["dates"]:
+            if bucket_id in object["fields"]["Service Journey Buckets"] and self.group_size in object["fields"]["Group Size"][0]:
+                return object["id"]
+        raise ValueError(f"Group Size '{self.group_size} and Bucket '{bucket_id} not found")
+
+
+
+
         
 
 

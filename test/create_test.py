@@ -1,22 +1,15 @@
 import requests
 
-URL = 'http://127.0.0.1:5000/create'
+URL = 'http://127.0.0.1:8080/create'
 HEADERS = {'Content-Type': 'application/json'}
 
 # payload
 payload = {
-  "data": {
-    "client_name": "Keystone Dental",
-    "record_id": "recPZkIVNjfHqx9rF",
-    "client_id": "rec53LXywLsdHrzq8",
-    "group_size": "recHwNU36PY43ta0F",
-    "funding_tag": "Fully Insured",
-    "conditionals": [],
-    "renewal_date": "2024-01-01",
-    "bor_date": "2022-12-06",
-    "ale_status": "Applicable Large Group Employer",
-    "ftes": 126
-  }
+  "service_plan_id": "recdnv3mtLnwp7QhP",
+  "client_id": "rec3XMI5ahwaSucPG",
+  "client_name": "Sample Client",
+  "group_size_id": "reck9MsWaYbOr1i3b",
+  "conditionals_id": []
 }
 
 response = requests.post(URL, headers=HEADERS, json=payload)
