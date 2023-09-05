@@ -1,8 +1,8 @@
 from flask import Flask, jsonify, request
 from dotenv import load_dotenv
 import os
-from modules.methods.create_service_plan import CreateServicePlan
-from modules.methods.create_onboarding import CreateOnboarding
+from methods.create_service_plan import CreateServicePlan
+from methods.create_onboarding import CreateOnboarding
 import logging
 
 # Set up global logging configuration
