@@ -1,5 +1,4 @@
 from modules.business_logic.airtable_methods import ServiceTemplateQuerier, WriteServiceItems
-from datetime import datetime
 import json
 
 class ServiceCreationError(Exception):
