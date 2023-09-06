@@ -66,17 +66,6 @@ def create_app():
             service_plan_status.status_code,
         )
 
-    @app.route("/onboarding", methods=["POST"])
-    def create_onboarding():
-        app.logger.info("Starting creation of onboarding")
-        data = request.json
-        onboarding_status = CreateOnboarding(create_object=data, logger=app.logger)
-        app.logger.info(f'Created onboarding for {data["client_name"]}')
-        return (
-            f'Service Plans Updated: {data["client_name"]}',
-            onboarding_status.status_code,
-        )
-
     @app.route("/favicon.ico")
     def favicon():
         return "", 204
