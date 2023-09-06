@@ -66,33 +66,6 @@ def create_app():
             service_plan_status.status_code,
         )
 
-    @app.route("/delete", methods=["POST"])
-    def delete_service_plan():
-        app.logger.info("Starting deletion of service plan...")
-        data = request.json
-        client_name = "Demo Company"
-        status_code = 200
-        app.logger.info(f"Finished deletion of service plan: INFORMATION")
-        return f"Service Plan Deleted: {client_name}", status_code
-
-    @app.route("/refactor", methods=["POST"])
-    def refactor_service_plan():
-        app.logger.info("Starting refactor of service plan...")
-        data = request.json
-        client_name = "Demo Company"
-        status_code = 200
-        app.logger.info(f"Finished refactor of service plans: INFORMATION")
-        return f"Service Plan Refactored: {client_name}", status_code
-
-    @app.route("/update", methods=["POST"])
-    def update_service_plans():
-        app.logger.info("Starting update of service plans...")
-        data = request.json
-        client_name = ["Demo Company", "ACME Corp"]
-        status_code = 200
-        app.logger.info(f"Finished update of service plans: INFORMATION")
-        return f"Service Plans Updated: {client_name}", status_code
-
     @app.route("/onboarding", methods=["POST"])
     def create_onboarding():
         app.logger.info("Starting creation of onboarding")
