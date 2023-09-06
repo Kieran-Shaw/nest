@@ -1,5 +1,6 @@
 from business_logic.airtable_methods import ServiceTemplateQuerier, WriteServiceItems
 import json
+from typing import Optional
 
 class ServiceCreationError(Exception):
     pass
@@ -11,35 +12,45 @@ def load_config(file_path: str) -> dict:
 config = load_config('config/config.json')
 
 class CreateServicePlan:
-    def __init__(self, create_object: dict, logger):
-        self.client_id = create_object["client_id"]
-        self.service_create_id = create_object["service_plan_id"]
-        self.group_size = create_object["group_size_id"]
-        # self.funding_tag = create_object["data"]["funding_tag"]
-        self.conditionals = create_object["conditionals_id"]
-        # self.renewal_date = datetime.strptime(create_object["data"]["renewal_date"], '%Y-%m-%d')
-        self.template_table_ids = config["template"]
-        self.write_table_ids = config["write"]
+    def __init__(self, create_object: dict, logger, onboarding_only: bool = False):
+        self.client_id: str = create_object["client_id"]
+        self.service_create_id: str = create_object["service_plan_id"]
+        self.group_size: Optional[str] = None
+        self.conditionals: Optional[str] = None
+        self.template_table_ids: Optional[str] = None
+        self.write_table_ids: Optional[str] = None
         self.service_template = None
 
         # Store the logger
         self.logger = logger
 
-        # Log initialization
-        self.logger.info(f"Initializing CreateServicePlan with client_id: {self.client_id} and service_create_id: {self.service_create_id}")
+        if not onboarding_only:
+            self.logger.info(f"Initializing Full CreateServicePlan with client_id: {self.client_id} and service_create_id: {self.service_create_id}")
+            self._initialize_full(create_object=create_object)
         
-        # Create the service plan upon instantiation
-        self._status_code = self.create_service_plan()
+        if onboarding_only:
+            self.logger.info(f"Initializing Onboarding Only CreateServicePlan with client_id: {self.client_id} and service_create_id: {self.service_create_id}")
+    
+    def _initialize_full(self, create_object: dict):
+        # Helper function to initialize attributes that are only relevant when onboarding_only is False
+        self.group_size = create_object["group_size_id"]
+        self.conditionals = create_object["conditionals_id"]
+        self.template_table_ids = config["template"]
+        self.write_table_ids = config["write"]
+    
+    def _initialize_onboarding(self, create_object: dict):
+        # Helper function to initialize attributes that are only relevant when onboarding_only is True
+        self.group_size = create_object["group_size_id"]
+        self.conditionals = create_object["conditionals_id"]
+        self.template_table_ids = config["template"]
+        self.write_table_ids = config["write"]
 
-    def create_service_plan(self):
+    def create_service_plan(self,onboarding: bool = False):
         # Log the service plan creation attempt
-        self.logger.info(f"Attempting to create service plan for client_id: {self.client_id}")
+        self.logger.info(f"Attempting to create service plan for client_id: {self.client_id}, Onboarding = {onboarding}")
 
         # Query Service Template
         self.service_template = ServiceTemplateQuerier(table_id_list=self.template_table_ids).query_all_tables()
-
-        # with open('response.json', 'w') as json_file:
-        #     json.dump(self.service_template, json_file)
 
         if not self.service_template:
             # Log the failure to fetch the service template
@@ -54,6 +65,11 @@ class CreateServicePlan:
         # Find applicable tasks, milestones, buckets & create service_plan
         applicable_tasks = self.applicable_tasks()
         grouped_by_bucket = self.group_by_bucket(milestones=self.service_template["milestones"],applicable_tasks=applicable_tasks)
+
+        # if we are just returning the service_template
+        if onboarding:
+            return grouped_by_bucket
+        
         create_buckets = self.write_records(write_client=write_client, grouped_by_bucket=grouped_by_bucket)
 
         if not create_buckets:

@@ -5,9 +5,13 @@ HEADERS = {'Content-Type': 'application/json'}
 
 # payload
 payload = {
-  "client_id": "rec3XMI5ahwaSucPG",
-  "service_plan_id": "recaOgS9lAfvifcKo",
-  "client_name": "Sample Client"
+  "client_id": "recHfhIo25QoLVVYq",
+  "service_plan_id": "recHNBvsvd17FtiZW",
+  "client_name": "Kieran Sample",
+  "group_size_id": "rectTqaBjnJ0AHMgx",
+  "conditionals_id": [
+    "recwFKWQUB8KxDoIp"
+  ]
 }
 
 response = requests.post(URL, headers=HEADERS, json=payload)
