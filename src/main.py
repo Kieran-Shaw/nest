@@ -1,8 +1,8 @@
 from flask import Flask, jsonify, request
 from dotenv import load_dotenv
 import os
-from modules.methods.create_service_plan import CreateServicePlan
-from modules.methods.create_onboarding import CreateOnboarding
+from methods.create_service_plan import CreateServicePlan
+from methods.create_onboarding import CreateOnboarding
 import logging
 
 # Set up global logging configuration
@@ -26,7 +26,7 @@ def create_app():
     def create_service_plan():
         data = request.json
         logger.info(f'Starting creation of service plan for {data["client_name"]}')
-        service_plan_status = CreateServicePlan(create_object=data,logger=logger)
+        service_plan_status = CreateServicePlan(create_object=data,logger=logger).create_service_plan()
         logger.info(f'Finished creation of service plan for {data["client_name"]}')
         return f'Service Plan Created: {data["client_name"]}', service_plan_status.status_code
     
@@ -57,7 +57,7 @@ def create_app():
         logger.info(f'Finished update of service plans: INFORMATION')
         return f'Service Plans Updated: {client_name}', status_code
     
-    @app.route('onboarding', mathod=['POST'])
+    @app.route('/onboarding', methods=['POST'])
     def create_onboarding():
         logger.info('Starting creation of onboarding')
         data = request.json

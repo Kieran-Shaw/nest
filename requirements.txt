@@ -27,6 +27,7 @@ requests==2.31.0
 rsa==4.7.2
 s3transfer==0.6.1
 six==1.16.0
+typing==3.7.4.3
 typing_extensions==4.7.1
 urllib3==1.26.16
 Werkzeug==2.3.6
